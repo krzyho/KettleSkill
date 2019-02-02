@@ -1,0 +1,89 @@
+service:
+  name: KettleSkill
+
+plugins:
+  - serverless-alexa-skills
+  - serverless-webpack
+  - serverless-offline
+provider:
+  name: aws
+  region: eu-west-1
+  runtime: nodejs8.10
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - lambda:InvokeFunction
+        - lambda:InvokeAsync
+      Resource: '*'
+    - Effect: 'Allow'
+      Action:
+        - 'sqs:SendMessage'
+      Resource: { 'Fn::GetAtt': ['KettleSkillQueue', 'Arn'] }
+
+custom:
+  tplinkLogin: ${env:TPLINK_LOGIN}
+  tplinkPassword: ${env:TPLINK_PASSWORD}
+  smartPlugAlias: ${env:SMART_PLUG_ALIAS}
+
+  alexa:
+    skills:
+      - id: amzn1.ask.skill.xxxx-xxxx-xxxx-xxxx-xxxx
+        manifest:
+          publishingInformation:
+            locales:
+              en-US:
+                name: KettleSkill
+          apis:
+            custom:
+              endpoint:
+                uri: arn:aws:lambda:[region]:[account-id]:function:[function-name]
+          manifestVersion: '1.0'
+        models:
+          en-US:
+            interactionModel:
+              languageModel:
+                invocationName: boil water
+                intents:
+                  - name: BoilIntent
+                    samples:
+                      - 'boil water'
+
+functions:
+  alexa:
+    handler: alexa/boilWater.handler
+    environment:
+      QUEUE_URL: ${self:resources.Outputs.KettleSkillQueueUrl.Value}
+    events:
+      - alexaSkill: ${self:custom.alexa.skills.0.id}
+  switch-on:
+    runtime: nodejs8.10
+    handler: lambda/switchOn.handler
+    environment:
+      TPLINK_LOGIN: ${self:custom.tplinkLogin}
+      TPLINK_PASSWORD: ${self:custom.tplinkPassword}
+      SMART_PLUG_ALIAS: ${self:custom.smartPlugAlias}
+  switch-off:
+    runtime: nodejs8.10
+    handler: lambda/switchOff.handler
+    environment:
+      TPLINK_LOGIN: ${self:custom.tplinkLogin}
+      TPLINK_PASSWORD: ${self:custom.tplinkPassword}
+      SMART_PLUG_ALIAS: ${self:custom.smartPlugAlias}
+      QUEUE_URL: ${self:resources.Outputs.KettleSkillQueueUrl.Value}
+    events:
+      - sqs:
+          arn:
+            Fn::GetAtt:
+              - KettleSkillQueue
+              - Arn
+
+resources:
+  Resources:
+    KettleSkillQueue:
+      Type: AWS::SQS::Queue
+      Properties:
+        QueueName: 'KettleSkillQueue'
+  Outputs:
+    KettleSkillQueueUrl:
+      Value:
+        Ref: KettleSkillQueue
