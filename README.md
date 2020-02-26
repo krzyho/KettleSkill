@@ -4,7 +4,7 @@
 
 ## What you'll need to achieve the same:
 
-- basic electric kettle. The crucial thing about it is that it needs to automatically deactive once the water has reached boiling point, but most of modern kettles already has such functionality
+- basic electric kettle. The crucial thing about it is that it needs to automatically deactivate once the water has reached boiling point, but most of modern kettles already has such functionality
 - AWS account
 - [TP-LINK HS110 smart plug](https://www.kasasmart.com/us/products/smart-plugs/kasa-smart-plug-energy-monitoring-hs110)
 - Amazon Echo
